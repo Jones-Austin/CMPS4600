@@ -1,9 +1,18 @@
-import { Text, View } from 'react-native';
+import React from 'react';
+import { SafeAreaView, Text, View } from 'react-native';
 
-export default function App() {
+const App = () => {
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Hello World!</Text>
-    </View>
+    <SafeAreaView>
+      <View style={{
+        borderWidth: 1, borderTopWidth: 5,
+        borderBottomWidth: 10, borderLeftWidth: 3, borderRightWidth: 20,
+        borderColor: '#33BEFF',
+      }}>
+        <Text>Hello Yinzers</Text>
+      </View>
+    </SafeAreaView>
   );
-}
+};
+
+export default App;
