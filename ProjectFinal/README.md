@@ -20,3 +20,24 @@ TrailBuddy is a Progressive Web App (PWA) built with React. It is designed for h
 - Vanilla CSS
 - Lucide-React (Icons)
 - Service Workers (PWA)
+
+## Project Architecture
+```mermaid
+graph TD
+    App[App.js] --> Nav[Navbar Component]
+    App --> Hero[Hero Stats Section]
+    App --> List[Recent Activity List]
+    App --> FAB[Log Hike Button]
+    
+    FAB --> Modal[Hike Entry Modal]
+    
+    DataFlow((Local State)) -.-> Hero
+    DataFlow -.-> List
+    
+    subgraph Browser Storage
+        SW[Service Worker]
+        Cache[(Cache Storage)]
+    end
+    
+    SW --- Cache
+```
