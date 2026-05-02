@@ -1,16 +1,21 @@
 import React from 'react';
-import { SafeAreaView, Text, View } from 'react-native';
+import { SafeAreaView, Text } from 'react-native';
 
 const App = () => {
   return (
     <SafeAreaView>
-      <View style={{
-        borderWidth: 1, borderTopWidth: 5,
-        borderBottomWidth: 10, borderLeftWidth: 3, borderRightWidth: 20,
-        borderColor: '#33BEFF',
-      }}>
-        <Text>Hello Yinzers</Text>
-      </View>
+      <Text
+        style={{
+          color: '#ff0000',
+          fontFamily: 'Arial',
+          fontSize: 50,
+          fontStyle: 'italic',
+          fontWeight: 'bold',
+          lineHeight: 50,
+          textAlign: 'auto',
+        }}>
+        Hello Yinzers
+      </Text>
     </SafeAreaView>
   );
 };
