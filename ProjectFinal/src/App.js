@@ -1,13 +1,53 @@
-import React, { useState } from 'react';
-import { Compass, Mountain, MapPin, History, Plus, TrendingUp, Calendar } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Compass, Mountain, MapPin, History, Plus, TrendingUp, Calendar, Star, Cloud, Sun, CloudRain, Wind } from 'lucide-react';
 import './App.css';
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hikes, setHikes] = useState([
-    { id: 1, name: 'Emerald Peak', distance: '5.2 mi', elevation: '1,200 ft', date: '2026-04-25', notes: 'Great views, bit windy at the top.' },
-    { id: 2, name: 'Pine Valley Trail', distance: '3.8 mi', elevation: '450 ft', date: '2026-04-18', notes: 'Easy walk, lots of wildlife.' },
+    { id: 1, name: 'Emerald Peak', distance: 5.2, elevation: 1200, date: '2026-04-25', notes: 'Great views, bit windy at the top.', difficulty: 'Hard', rating: 5 },
+    { id: 2, name: 'Pine Valley Trail', distance: 3.8, elevation: 450, date: '2026-04-18', notes: 'Easy walk, lots of wildlife.', difficulty: 'Easy', rating: 4 },
   ]);
+
+  const [weather, setWeather] = useState({
+    temp: 72,
+    condition: 'Sunny',
+    location: 'Current Location',
+    icon: <Sun className="weather-icon" />
+  });
+
+
+  const stats = useMemo(() => {
+    const totalDist = hikes.reduce((acc, hike) => acc + parseFloat(hike.distance), 0);
+    const totalElev = hikes.reduce((acc, hike) => acc + parseInt(hike.elevation), 0);
+    
+    const now = new Date();
+    const thisMonth = hikes.filter(hike => {
+      const hikeDate = new Date(hike.date);
+      return hikeDate.getMonth() === now.getMonth() && hikeDate.getFullYear() === now.getFullYear();
+    }).length;
+
+    return {
+      distance: totalDist.toFixed(1),
+      elevation: totalElev.toLocaleString(),
+      count: thisMonth
+    };
+  }, [hikes]);
+
+  useEffect(() => {
+    const conditions = [
+      { cond: 'Partly Cloudy', icon: <Cloud className="weather-icon" />, temp: 68 },
+      { cond: 'Sunny', icon: <Sun className="weather-icon" />, temp: 75 },
+      { cond: 'Breezy', icon: <Wind className="weather-icon" />, temp: 62 }
+    ];
+    const random = conditions[Math.floor(Math.random() * conditions.length)];
+    
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        setWeather(prev => ({ ...prev, ...random, location: 'Your Region' }));
+      });
+    }
+  }, []);
 
   const toggleModal = () => setIsModalOpen(!isModalOpen);
 
@@ -17,13 +57,21 @@ function App() {
     const newHike = {
       id: Date.now(),
       name: formData.get('name'),
-      distance: formData.get('distance') + ' mi',
-      elevation: formData.get('elevation') + ' ft',
+      distance: parseFloat(formData.get('distance')),
+      elevation: parseInt(formData.get('elevation')),
+      difficulty: formData.get('difficulty'),
+      rating: parseInt(formData.get('rating')),
       date: new Date().toISOString().split('T')[0],
       notes: formData.get('notes')
     };
     setHikes([newHike, ...hikes]);
     toggleModal();
+  };
+
+  const renderStars = (rating) => {
+    return [...Array(5)].map((_, i) => (
+      <Star key={i} size={12} fill={i < rating ? "var(--secondary)" : "none"} color={i < rating ? "var(--secondary)" : "var(--text-muted)"} />
+    ));
   };
 
   return (
@@ -42,6 +90,23 @@ function App() {
       </nav>
 
       <main className="content">
+        {/* Weather Feature */}
+        <section className="weather-section animate-fade-in">
+          <div className="weather-card glass">
+            <div className="weather-main">
+              {weather.icon}
+              <div className="weather-info">
+                <span className="temp">{weather.temp}°F</span>
+                <span className="condition">{weather.condition}</span>
+              </div>
+            </div>
+            <div className="weather-meta">
+              <span className="location"><MapPin size={14} /> {weather.location}</span>
+              <span className="recommendation">Perfect day for a hike!</span>
+            </div>
+          </div>
+        </section>
+
         {/* Hero Stats */}
         <header className="hero animate-fade-in">
           <h1>Welcome back, Hiker</h1>
@@ -50,21 +115,21 @@ function App() {
               <TrendingUp className="stat-icon" />
               <div className="stat-info">
                 <span className="stat-label">Total Distance</span>
-                <span className="stat-value">24.5 mi</span>
+                <span className="stat-value">{stats.distance} mi</span>
               </div>
             </div>
             <div className="stat-card glass">
               <Mountain className="stat-icon" />
               <div className="stat-info">
                 <span className="stat-label">Elevation Gain</span>
-                <span className="stat-value">4,850 ft</span>
+                <span className="stat-value">{stats.elevation} ft</span>
               </div>
             </div>
             <div className="stat-card glass">
               <Calendar className="stat-icon" />
               <div className="stat-info">
                 <span className="stat-label">Hikes This Month</span>
-                <span className="stat-value">6</span>
+                <span className="stat-value">{stats.count}</span>
               </div>
             </div>
           </div>
@@ -80,15 +145,18 @@ function App() {
             {hikes.map(hike => (
               <div key={hike.id} className="hike-card glass">
                 <div className="hike-info">
-                  <h3>{hike.name}</h3>
+                  <div className="hike-title-row">
+                    <h3>{hike.name}</h3>
+                    <span className={`badge ${hike.difficulty.toLowerCase()}`}>{hike.difficulty}</span>
+                  </div>
                   <p className="hike-meta">
-                    <span>{hike.date}</span> • <span>{hike.distance}</span>
+                    <span>{hike.date}</span> • <span>{hike.distance} mi</span> • <span className="stars">{renderStars(hike.rating)}</span>
                   </p>
                   <p className="hike-notes">{hike.notes}</p>
                 </div>
                 <div className="hike-stats">
                   <div className="mini-stat">
-                    <TrendingUp size={14} /> {hike.elevation}
+                    <TrendingUp size={14} /> {hike.elevation} ft
                   </div>
                 </div>
               </div>
@@ -122,6 +190,20 @@ function App() {
                   <input name="elevation" type="number" placeholder="1200" required />
                 </div>
               </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Difficulty</label>
+                  <select name="difficulty" className="glass-input">
+                    <option value="Easy">Easy</option>
+                    <option value="Moderate">Moderate</option>
+                    <option value="Hard">Hard</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Rating (1-5)</label>
+                  <input name="rating" type="number" min="1" max="5" defaultValue="5" required />
+                </div>
+              </div>
               <div className="form-group">
                 <label>Notes</label>
                 <textarea name="notes" placeholder="How was the trail?"></textarea>
@@ -139,3 +221,4 @@ function App() {
 }
 
 export default App;
+
