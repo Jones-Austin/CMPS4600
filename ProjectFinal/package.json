@@ -1,6 +1,7 @@
 {
   "name": "trailbuddy",
   "version": "0.1.0",
+  "homepage": ".",
   "private": true,
   "dependencies": {
     "cra-template-pwa": "2.0.0",

@@ -10,11 +10,66 @@ function App() {
   ]);
 
   const [weather, setWeather] = useState({
-    temp: 72,
-    condition: 'Sunny',
-    location: 'Current Location',
-    icon: <Sun className="weather-icon" />
+    temp: '--',
+    condition: 'Loading...',
+    location: 'Detecting...',
+    icon: <Cloud className="weather-icon animate-pulse" />
   });
+
+  useEffect(() => {
+    const fetchWeather = async (lat, lon) => {
+      try {
+        const response = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&temperature_unit=fahrenheit`
+        );
+        const data = await response.json();
+        
+        const code = data.current.weather_code;
+        let condition = 'Clear';
+        let icon = <Sun className="weather-icon" />;
+
+        if (code === 0) {
+          condition = 'Clear Sky';
+          icon = <Sun className="weather-icon" />;
+        } else if (code >= 1 && code <= 3) {
+          condition = 'Partly Cloudy';
+          icon = <Cloud className="weather-icon" />;
+        } else if (code >= 51 && code <= 67) {
+          condition = 'Rainy';
+          icon = <CloudRain className="weather-icon" />;
+        } else if (code >= 80) {
+          condition = 'Showers';
+          icon = <CloudRain className="weather-icon" />;
+        } else {
+          condition = 'Cloudy';
+          icon = <Cloud className="weather-icon" />;
+        }
+
+        setWeather({
+          temp: Math.round(data.current.temperature_2m),
+          condition: condition,
+          location: 'Your Region',
+          icon: icon
+        });
+      } catch (error) {
+        console.error("Weather fetch failed:", error);
+        setWeather(prev => ({ ...prev, condition: 'Offline', location: 'Check Connection' }));
+      }
+    };
+
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          fetchWeather(position.coords.latitude, position.coords.longitude);
+        },
+        () => {
+          // Fallback if user denies location
+          fetchWeather(40.7128, -74.0060); // Default to NYC
+          setWeather(prev => ({ ...prev, location: 'New York (Default)' }));
+        }
+      );
+    }
+  }, []);
 
 
   const stats = useMemo(() => {
@@ -33,21 +88,6 @@ function App() {
       count: thisMonth
     };
   }, [hikes]);
-
-  useEffect(() => {
-    const conditions = [
-      { cond: 'Partly Cloudy', icon: <Cloud className="weather-icon" />, temp: 68 },
-      { cond: 'Sunny', icon: <Sun className="weather-icon" />, temp: 75 },
-      { cond: 'Breezy', icon: <Wind className="weather-icon" />, temp: 62 }
-    ];
-    const random = conditions[Math.floor(Math.random() * conditions.length)];
-    
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition((position) => {
-        setWeather(prev => ({ ...prev, ...random, location: 'Your Region' }));
-      });
-    }
-  }, []);
 
   const toggleModal = () => setIsModalOpen(!isModalOpen);
 
