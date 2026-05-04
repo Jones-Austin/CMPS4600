@@ -98,6 +98,45 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.search-box, .filter-box {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 12px;
+  gap: 8px;
+}
+
+.search-box input {
+  background: none;
+  border: none;
+  color: var(--text-main);
+  font-size: 0.9rem;
+  width: 150px;
+  outline: none;
+}
+
+.filter-select {
+  background: none;
+  border: none;
+  color: var(--text-main);
+  font-size: 0.9rem;
+  cursor: pointer;
+  outline: none;
+}
+
+.search-icon, .filter-icon {
+  color: var(--text-muted);
 }
 
 .text-button {
@@ -366,6 +405,56 @@ textarea {
 select.glass-input option {
   background: var(--bg-card);
   color: var(--text-main);
+}
+
+/* Empty State */
+.empty-state {
+  padding: 60px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.icon-muted {
+  color: var(--text-muted);
+  opacity: 0.3;
+}
+
+.empty-state h3 {
+  color: var(--text-main);
+  margin-bottom: 5px;
+}
+
+.empty-state p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* Hike Actions */
+.hike-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 15px;
+}
+
+.delete-button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 6px;
+  transition: var(--transition);
+  opacity: 0.5;
+}
+
+.delete-button:hover {
+  color: #e74c3c;
+  background: rgba(231, 76, 60, 0.1);
+  opacity: 1;
 }
 
 @media (max-width: 600px) {

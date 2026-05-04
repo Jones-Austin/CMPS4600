@@ -1,13 +1,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Compass, Mountain, MapPin, History, Plus, TrendingUp, Calendar, Star, Cloud, Sun, CloudRain, Wind } from 'lucide-react';
+import { Compass, Mountain, MapPin, History, Plus, TrendingUp, Calendar, Star, Cloud, Sun, CloudRain, Wind, Trash2, Search, Filter } from 'lucide-react';
 import './App.css';
+
+const DEFAULT_HIKES = [
+  { id: 1, name: 'Emerald Peak', distance: 5.2, elevation: 1200, date: '2026-04-25', notes: 'Great views, bit windy at the top.', difficulty: 'Hard', rating: 5 },
+  { id: 2, name: 'Pine Valley Trail', distance: 3.8, elevation: 450, date: '2026-04-18', notes: 'Easy walk, lots of wildlife.', difficulty: 'Easy', rating: 4 },
+];
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [hikes, setHikes] = useState([
-    { id: 1, name: 'Emerald Peak', distance: 5.2, elevation: 1200, date: '2026-04-25', notes: 'Great views, bit windy at the top.', difficulty: 'Hard', rating: 5 },
-    { id: 2, name: 'Pine Valley Trail', distance: 3.8, elevation: 450, date: '2026-04-18', notes: 'Easy walk, lots of wildlife.', difficulty: 'Easy', rating: 4 },
-  ]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [difficultyFilter, setDifficultyFilter] = useState('All');
+  
+  // Initialize state from LocalStorage
+  const [hikes, setHikes] = useState(() => {
+    const saved = localStorage.getItem('trailbuddy_hikes');
+    return saved ? JSON.parse(saved) : DEFAULT_HIKES;
+  });
 
   const [weather, setWeather] = useState({
     temp: '--',
@@ -15,6 +24,11 @@ function App() {
     location: 'Detecting...',
     icon: <Cloud className="weather-icon animate-pulse" />
   });
+
+  // Persist hikes to LocalStorage
+  useEffect(() => {
+    localStorage.setItem('trailbuddy_hikes', JSON.stringify(hikes));
+  }, [hikes]);
 
   useEffect(() => {
     const fetchWeather = async (lat, lon) => {
@@ -73,11 +87,12 @@ function App() {
 
 
   const stats = useMemo(() => {
-    const totalDist = hikes.reduce((acc, hike) => acc + parseFloat(hike.distance), 0);
-    const totalElev = hikes.reduce((acc, hike) => acc + parseInt(hike.elevation), 0);
+    const totalDist = hikes.reduce((acc, hike) => acc + parseFloat(hike.distance || 0), 0);
+    const totalElev = hikes.reduce((acc, hike) => acc + parseInt(hike.elevation || 0), 0);
     
     const now = new Date();
     const thisMonth = hikes.filter(hike => {
+      if (!hike.date) return false;
       const hikeDate = new Date(hike.date);
       return hikeDate.getMonth() === now.getMonth() && hikeDate.getFullYear() === now.getFullYear();
     }).length;
@@ -88,6 +103,15 @@ function App() {
       count: thisMonth
     };
   }, [hikes]);
+
+  const filteredHikes = useMemo(() => {
+    return hikes.filter(hike => {
+      const matchesSearch = hike.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                           hike.notes.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesFilter = difficultyFilter === 'All' || hike.difficulty === difficultyFilter;
+      return matchesSearch && matchesFilter;
+    });
+  }, [hikes, searchTerm, difficultyFilter]);
 
   const toggleModal = () => setIsModalOpen(!isModalOpen);
 
@@ -108,6 +132,18 @@ function App() {
     toggleModal();
   };
 
+  const deleteHike = (id) => {
+    if (window.confirm("Are you sure you want to delete this hike?")) {
+      setHikes(hikes.filter(hike => hike.id !== id));
+    }
+  };
+
+  const clearAllData = () => {
+    if (window.confirm("Warning: This will delete ALL your hike history. Proceed?")) {
+      setHikes([]);
+    }
+  };
+
   const renderStars = (rating) => {
     return [...Array(5)].map((_, i) => (
       <Star key={i} size={12} fill={i < rating ? "var(--secondary)" : "none"} color={i < rating ? "var(--secondary)" : "var(--text-muted)"} />
@@ -124,7 +160,7 @@ function App() {
         </div>
         <div className="nav-links">
           <Compass className="nav-icon active" />
-          <History className="nav-icon" />
+          <History className="nav-icon" onClick={clearAllData} title="Clear All Data" />
           <MapPin className="nav-icon" />
         </div>
       </nav>
@@ -179,28 +215,63 @@ function App() {
         <section className="recent-activity animate-fade-in" style={{ animationDelay: '0.2s' }}>
           <div className="section-header">
             <h2>Recent Activity</h2>
-            <button className="text-button">View All</button>
+            <div className="header-actions">
+              <div className="search-box glass">
+                <Search size={16} className="search-icon" />
+                <input 
+                  type="text" 
+                  placeholder="Search hikes..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="filter-box glass">
+                <Filter size={16} className="filter-icon" />
+                <select 
+                  value={difficultyFilter} 
+                  onChange={(e) => setDifficultyFilter(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="All">All Levels</option>
+                  <option value="Easy">Easy</option>
+                  <option value="Moderate">Moderate</option>
+                  <option value="Hard">Hard</option>
+                </select>
+              </div>
+              {hikes.length > 0 && <button className="text-button" onClick={clearAllData}>Clear All</button>}
+            </div>
           </div>
           <div className="activity-list">
-            {hikes.map(hike => (
-              <div key={hike.id} className="hike-card glass">
-                <div className="hike-info">
-                  <div className="hike-title-row">
-                    <h3>{hike.name}</h3>
-                    <span className={`badge ${hike.difficulty.toLowerCase()}`}>{hike.difficulty}</span>
-                  </div>
-                  <p className="hike-meta">
-                    <span>{hike.date}</span> • <span>{hike.distance} mi</span> • <span className="stars">{renderStars(hike.rating)}</span>
-                  </p>
-                  <p className="hike-notes">{hike.notes}</p>
-                </div>
-                <div className="hike-stats">
-                  <div className="mini-stat">
-                    <TrendingUp size={14} /> {hike.elevation} ft
-                  </div>
-                </div>
+            {filteredHikes.length === 0 ? (
+              <div className="empty-state glass">
+                <Mountain size={48} className="icon-muted" />
+                <h3>{searchTerm || difficultyFilter !== 'All' ? 'No results found' : 'No hikes logged yet'}</h3>
+                <p>{searchTerm || difficultyFilter !== 'All' ? 'Try adjusting your search or filters.' : 'Start your adventure by clicking the + button below.'}</p>
               </div>
-            ))}
+            ) : (
+              filteredHikes.map(hike => (
+                <div key={hike.id} className="hike-card glass">
+                  <div className="hike-info">
+                    <div className="hike-title-row">
+                      <h3>{hike.name}</h3>
+                      <span className={`badge ${hike.difficulty?.toLowerCase()}`}>{hike.difficulty}</span>
+                    </div>
+                    <p className="hike-meta">
+                      <span>{hike.date}</span> • <span>{hike.distance} mi</span> • <span className="stars">{renderStars(hike.rating)}</span>
+                    </p>
+                    <p className="hike-notes">{hike.notes}</p>
+                  </div>
+                  <div className="hike-actions">
+                    <div className="mini-stat">
+                      <TrendingUp size={14} /> {hike.elevation} ft
+                    </div>
+                    <button className="delete-button" onClick={() => deleteHike(hike.id)}>
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </section>
       </main>
