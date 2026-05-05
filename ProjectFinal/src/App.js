@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Compass, Mountain, MapPin, History, Plus, TrendingUp, Calendar, Star, Cloud, Sun, CloudRain, Wind, Trash2, Search, Filter } from 'lucide-react';
+import { Compass, Mountain, MapPin, History, Plus, TrendingUp, Calendar, Star, Cloud, Sun, CloudRain, Trash2, Search, Filter, Edit3 } from 'lucide-react';
 import './App.css';
 
 const DEFAULT_HIKES = [
@@ -11,6 +11,11 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState('All');
+  
+  const [monthlyGoal, setMonthlyGoal] = useState(() => {
+    const saved = localStorage.getItem('trailbuddy_goal');
+    return saved ? parseInt(saved) : 20;
+  });
   
   // Initialize state from LocalStorage
   const [hikes, setHikes] = useState(() => {
@@ -29,6 +34,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem('trailbuddy_hikes', JSON.stringify(hikes));
   }, [hikes]);
+
+  useEffect(() => {
+    localStorage.setItem('trailbuddy_goal', monthlyGoal.toString());
+  }, [monthlyGoal]);
 
   useEffect(() => {
     const fetchWeather = async (lat, lon) => {
@@ -91,16 +100,19 @@ function App() {
     const totalElev = hikes.reduce((acc, hike) => acc + parseInt(hike.elevation || 0), 0);
     
     const now = new Date();
-    const thisMonth = hikes.filter(hike => {
+    const hikesThisMonth = hikes.filter(hike => {
       if (!hike.date) return false;
       const hikeDate = new Date(hike.date);
       return hikeDate.getMonth() === now.getMonth() && hikeDate.getFullYear() === now.getFullYear();
-    }).length;
+    });
+
+    const distThisMonth = hikesThisMonth.reduce((acc, hike) => acc + parseFloat(hike.distance || 0), 0);
 
     return {
       distance: totalDist.toFixed(1),
       elevation: totalElev.toLocaleString(),
-      count: thisMonth
+      count: hikesThisMonth.length,
+      monthlyDist: distThisMonth.toFixed(1)
     };
   }, [hikes]);
 
@@ -130,6 +142,13 @@ function App() {
     };
     setHikes([newHike, ...hikes]);
     toggleModal();
+  };
+
+  const updateGoal = () => {
+    const newGoal = window.prompt("Set your monthly distance goal (miles):", monthlyGoal);
+    if (newGoal && !isNaN(newGoal)) {
+      setMonthlyGoal(parseInt(newGoal));
+    }
   };
 
   const deleteHike = (id) => {
@@ -185,7 +204,22 @@ function App() {
 
         {/* Hero Stats */}
         <header className="hero animate-fade-in">
-          <h1>Welcome back, Hiker</h1>
+          <div className="hero-header">
+            <h1>Welcome back, Hiker</h1>
+            <div className="goal-container glass" onClick={updateGoal}>
+              <div className="goal-info">
+                <span className="goal-label">Monthly Goal</span>
+                <span className="goal-status">{stats.monthlyDist} / {monthlyGoal} mi</span>
+              </div>
+              <div className="goal-progress-bar">
+                <div 
+                  className="goal-progress-fill" 
+                  style={{ width: `${Math.min((stats.monthlyDist / monthlyGoal) * 100, 100)}%` }}
+                ></div>
+              </div>
+              <Edit3 size={14} className="goal-edit-icon" />
+            </div>
+          </div>
           <div className="stats-grid">
             <div className="stat-card glass">
               <TrendingUp className="stat-icon" />
